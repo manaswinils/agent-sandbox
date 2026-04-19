@@ -6,7 +6,7 @@ prototype for claude coding agent capabilities
 To run the greeting script, execute the following command:
 
 ```bash
-python greet.py
+python scripts/greet.py
 ```
 
 This will print `Hello from the agent` to the console.
