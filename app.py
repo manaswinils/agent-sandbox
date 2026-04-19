@@ -3,7 +3,7 @@ import os
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
-from flask import Flask, render_template, request
+from flask import Flask, jsonify, render_template, request
 
 load_dotenv()
 
@@ -38,6 +38,11 @@ def index():
                 error = f"Could not generate quote: {e}"
 
     return render_template("index.html", quote=quote, work=work, error=error)
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify(status="ok")
 
 
 if __name__ == "__main__":
