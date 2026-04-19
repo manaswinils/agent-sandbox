@@ -1,5 +1,7 @@
 """Motivational quote web app powered by Claude."""
 import os
+import sys
+from datetime import date
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
@@ -43,6 +45,11 @@ def index():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify(status="ok")
+
+
+@app.route("/version", methods=["GET"])
+def version():
+    return jsonify(python_version=sys.version, date=date.today().isoformat())
 
 
 if __name__ == "__main__":
