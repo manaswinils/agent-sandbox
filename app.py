@@ -40,7 +40,7 @@ def index():
     return render_template("index.html", quote=quote, work=work, error=error)
 
 
-@app.route("/health")
+@app.route("/health", methods=["GET"])
 def health():
     return jsonify(status="ok")
 
