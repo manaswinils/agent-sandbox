@@ -1,6 +1,6 @@
 """Motivational quote web app powered by Claude."""
 import os
-import sys
+import platform
 from datetime import date
 
 from anthropic import Anthropic
@@ -49,7 +49,7 @@ def health():
 
 @app.route("/version", methods=["GET"])
 def version():
-    return jsonify(python_version=sys.version, date=date.today().isoformat())
+    return jsonify(python_version=platform.python_version(), date=date.today().isoformat())
 
 
 if __name__ == "__main__":

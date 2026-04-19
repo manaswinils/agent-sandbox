@@ -1,5 +1,5 @@
 """Tests for the /version endpoint."""
-import sys
+import platform
 from datetime import date
 
 
@@ -12,20 +12,22 @@ def test_version_status_code(client):
 def test_version_content_type(client):
     """GET /version returns application/json content type."""
     response = client.get("/version")
-    assert response.content_type == "application/json"
+    assert response.mimetype == "application/json"
 
 
 def test_version_json_has_python_version(client):
-    """GET /version response contains python_version matching sys.version."""
+    """GET /version response contains python_version matching platform.python_version()."""
     response = client.get("/version")
     data = response.get_json()
     assert "python_version" in data
-    assert data["python_version"] == sys.version
+    assert data["python_version"] == platform.python_version()
 
 
 def test_version_json_has_date(client):
     """GET /version response contains date in ISO format matching today's date."""
+    today_before = date.today().isoformat()
     response = client.get("/version")
+    today_after = date.today().isoformat()
     data = response.get_json()
     assert "date" in data
-    assert data["date"] == date.today().isoformat()
+    assert data["date"] in (today_before, today_after)
