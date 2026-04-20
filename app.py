@@ -16,6 +16,9 @@ client = Anthropic()
 # Maximum allowed length per journal field (chars) to control token costs
 MAX_FIELD_LENGTH = 2000
 
+# Make MAX_FIELD_LENGTH available to all templates
+app.jinja_env.globals["MAX_FIELD_LENGTH"] = MAX_FIELD_LENGTH
+
 # System prompt for journal coach (separated from user content for prompt injection safety)
 JOURNAL_SYSTEM_PROMPT = (
     "You are a thoughtful daily journal coach. The user filled out their HOPE framework "
@@ -26,9 +29,9 @@ JOURNAL_SYSTEM_PROMPT = (
 
 
 def _sanitize_field(value: str) -> str:
-    """Truncate, strip, and escape < > to prevent XML tag injection."""
+    """Truncate, strip, and remove < > to prevent XML tag injection."""
     cleaned = value.strip()[:MAX_FIELD_LENGTH]
-    return cleaned.replace("<", "&lt;").replace(">", "&gt;")
+    return cleaned.replace("<", "").replace(">", "")
 
 
 def _build_journal_user_message(
@@ -113,7 +116,8 @@ def index():
 @app.route("/journal", methods=["GET", "POST"])
 def journal():
     """Render HOPE framework journal page and generate Claude reflection."""
-    reflection = error = None
+    reflection = None
+    error = None
     highlights = obstacles = progress = expectations = ""
 
     if request.method == "POST":
