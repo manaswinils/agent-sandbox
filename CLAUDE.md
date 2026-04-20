@@ -47,9 +47,9 @@ docker run -p 8000:8000 -e ANTHROPIC_API_KEY=... motivational-quote-app
 
 | Path | Purpose |
 |---|---|
-| `app.py` | Flask app — routes: `GET/POST /`, `GET/POST /journal`, `GET /health`, `GET /ping`, and `GET /version` |
+| `app.py` | Flask app — routes: `GET/POST /`, `GET/POST /journal`, `GET /health`, `GET /ping`, and `GET /version`; also contains `_build_journal_prompt()` helper |
 | `templates/index.html` | Jinja2 template — quote form + quote display + nav link to /journal |
-| `templates/journal.html` | Jinja2 template — HOPE journal form + reflection display |
+| `templates/journal.html` | Jinja2 template — HOPE journal form (highlights, obstacles, progress, expectations) + reflection display |
 | `Dockerfile` | Container image for Azure deployment |
 | `Procfile` | Azure App Service startup command |
 | `.agents/review_agent.py` | AI PR review agent (called by GitHub Actions) |
