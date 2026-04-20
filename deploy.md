@@ -15,11 +15,35 @@ the application. Update this file when infrastructure changes.
 - **Login Server:** motivationalquoteacr.azurecr.io
 - **Image Name:** motivational-quote-app
 
-## Container App
+## Staging Environment
+
+- **App Name:** motivational-quote-app-staging
+- **Container Apps Environment:** motivational-quote-env
+- **Live URL:** https://motivational-quote-app-staging.delightfulfield-c939fa9a.eastus.azurecontainerapps.io
+- **Min Replicas:** 0 (scale to zero when idle)
+
+Deploy command (replace `<TAG>`):
+```bash
+az containerapp update \
+  --name motivational-quote-app-staging \
+  --resource-group rg-motivational-quote \
+  --image motivationalquoteacr.azurecr.io/motivational-quote-app:<TAG>
+```
+
+## Production Environment
 
 - **App Name:** motivational-quote-app
-- **Environment:** motivational-quote-env
+- **Container Apps Environment:** motivational-quote-env
 - **Live URL:** https://motivational-quote-app.delightfulfield-c939fa9a.eastus.azurecontainerapps.io
+- **Min Replicas:** 1 (always on)
+
+Deploy command (replace `<TAG>`):
+```bash
+az containerapp update \
+  --name motivational-quote-app \
+  --resource-group rg-motivational-quote \
+  --image motivationalquoteacr.azurecr.io/motivational-quote-app:<TAG>
+```
 
 ## Build
 
@@ -33,20 +57,12 @@ az acr build \
   .
 ```
 
-## Deploy
+The same image tag is used for both staging and production — build once, promote to prod.
 
-Update the running Container App to use the new image tag:
+## Health Checks
 
-```bash
-az containerapp update \
-  --name motivational-quote-app \
-  --resource-group rg-motivational-quote \
-  --image motivationalquoteacr.azurecr.io/motivational-quote-app:<TAG>
-```
-
-## Health Check
-
-- **URL:** https://motivational-quote-app.delightfulfield-c939fa9a.eastus.azurecontainerapps.io
+- **Staging URL:** https://motivational-quote-app-staging.delightfulfield-c939fa9a.eastus.azurecontainerapps.io
+- **Production URL:** https://motivational-quote-app.delightfulfield-c939fa9a.eastus.azurecontainerapps.io
 - **Expected:** HTTP 200
 - **Retries:** 5 attempts with 10-second delays
 
@@ -55,14 +71,7 @@ az containerapp update \
 Each deploy run logs the image tag to stdout. To roll back:
 
 1. Note the previous tag from the deploy log (format: `YYYYMMDD-HHMMSS`)
-2. Re-run the deploy command with the previous tag:
-
-```bash
-az containerapp update \
-  --name motivational-quote-app \
-  --resource-group rg-motivational-quote \
-  --image motivationalquoteacr.azurecr.io/motivational-quote-app:<PREVIOUS_TAG>
-```
+2. Re-run the appropriate deploy command with the previous tag.
 
 ## Required Tooling
 
