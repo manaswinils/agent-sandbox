@@ -47,6 +47,11 @@ def health():
     return jsonify(status="ok")
 
 
+@app.route("/ping", methods=["GET"])
+def ping():
+    return jsonify(pong=True)
+
+
 @app.route("/version", methods=["GET"])
 def version():
     return jsonify(python_version=platform.python_version(), date=date.today().isoformat())
