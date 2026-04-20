@@ -9,11 +9,11 @@ by the pipeline after every merged PR. Always read these before making changes:
 
 | Document | What it contains |
 |---|---|
-| `ARCHITECTURE.md` | System components, routes, data flow, deployment topology |
-| `TEST.md` | Test strategy, what is covered, mocking patterns, E2E behaviour |
-| `DECISIONS.md` | Architectural decisions log — read before making design choices |
+| `docs/ARCHITECTURE.md` | System components, routes, data flow, deployment topology |
+| `docs/TEST.md` | Test strategy, what is covered, mocking patterns, E2E behaviour |
+| `docs/DECISIONS.md` | Architectural decisions log — read before making design choices |
 | `CLAUDE.md` | *(this file)* Conventions, app structure, what NOT to do |
-| `deploy.md` | Deployment config — Azure resources, image names, health URLs |
+| `docs/deploy.md` | Deployment config — Azure resources, image names, health URLs |
 | `plan.md` | Current-PR implementation plan (created fresh each pipeline run) |
 
 ## What this repo is
