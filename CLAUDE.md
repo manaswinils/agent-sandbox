@@ -31,7 +31,7 @@ docker run -p 8000:8000 -e ANTHROPIC_API_KEY=... motivational-quote-app
 
 | Path | Purpose |
 |---|---|
-| `app.py` | Flask app — routes: `GET/POST /`, `GET /health`, and `GET /version` |
+| `app.py` | Flask app — routes: `GET/POST /`, `GET /health`, `GET /version`, and `GET /ping` |
 | `templates/index.html` | Jinja2 template — form + quote display |
 | `Dockerfile` | Container image for Azure deployment |
 | `Procfile` | Azure App Service startup command |
