@@ -1,7 +1,7 @@
 # Implementation Plan: add a /ping endpoint that returns JSON {"pong": true}
 
 ## Overview
-The `/ping` endpoint already exists in the codebase. The route is defined in `app.py` and returns `jsonify(pong=True)`, which produces the JSON response `{"pong": true}`. Tests for this endpoint already exist in `tests/test_ping.py`, and the endpoint is documented in `CLAUDE.md`. No changes are required.
+The `/ping` endpoint already exists in the codebase. The route is defined in `app.py`, returning `jsonify(pong=True)`. Tests covering status code, content type, and JSON body are present in `tests/test_ping.py`, and the endpoint is documented in `CLAUDE.md`. **No changes are required.**
 
 ## Files to Create
 | File | Purpose |
@@ -11,19 +11,19 @@ The `/ping` endpoint already exists in the codebase. The route is defined in `ap
 ## Files to Modify
 | File | Change Required |
 |------|----------------|
-| *(none)* | No modifications needed — `app.py` already contains the `/ping` route at line 49, returning `jsonify(pong=True)`. |
+| *(none)* | No modifications needed — the implementation is already complete. |
 
 ## Implementation Approach
-1. **Verify existing implementation**: `app.py` already defines `@app.route("/ping", methods=["GET"])` with a `ping()` function that returns `jsonify(pong=True)`.
-2. **Verify existing tests**: `tests/test_ping.py` already contains three tests — `test_ping_status_code`, `test_ping_content_type`, and `test_ping_json_body` — that validate the endpoint returns HTTP 200, `application/json` content type, and `{"pong": true}` body respectively.
-3. **Verify documentation**: `CLAUDE.md` already lists `GET /ping` in the app structure table.
-4. **No action required**: The goal is fully satisfied by the current codebase.
+1. **Verify existing route in `app.py`** — Line `@app.route("/ping", methods=["GET"])` defines the endpoint. The handler `def ping()` returns `jsonify(pong=True)`, which Flask serializes to `{"pong": true}` with a `200` status and `application/json` content type.
+2. **Verify existing tests in `tests/test_ping.py`** — Three tests cover: HTTP 200 status code (`test_ping_status_code`), `application/json` content type (`test_ping_content_type`), and the exact JSON body `{"pong": true}` (`test_ping_json_body`). All use the shared `client` fixture from `tests/conftest.py`.
+3. **Verify documentation in `CLAUDE.md`** — The routes table already lists `GET /ping` as a registered route.
+4. **No action items remain.** The goal is fully satisfied by the current codebase.
 
 ## Test Strategy
-- Run existing tests with `pytest tests/test_ping.py -v` to confirm all three tests pass.
-- Manually verify with `flask run` and `curl http://localhost:5000/ping` to confirm `{"pong": true}` is returned.
-- The existing tests cover: HTTP status code (200), content type (`application/json`), and exact JSON body (`{"pong": true}`).
+- **Unit tests (already exist):** `tests/test_ping.py` contains `test_ping_status_code`, `test_ping_content_type`, and `test_ping_json_body`. Run with `pytest tests/test_ping.py -v`.
+- **Functional validation:** Start the app locally (`flask run`) and confirm `curl http://localhost:5000/ping` returns `{"pong":true}` with HTTP 200.
+- **CI validation:** The existing CI pipeline (`test.yml` / `azure-deploy.yml`) will run these tests automatically on every PR and push to main.
 
 ## Risks and Assumptions
-- **Assumption**: The goal is to ensure a `/ping` endpoint exists that returns `{"pong": true}` — this is already the case.
-- **Risk**: None — the feature is fully implemented, tested, and documented.
+- **Assumption:** The goal is identical to what is already implemented — a `GET /ping` endpoint returning `{"pong": true}` with status 200 and JSON content type.
+- **Risk:** None. The feature is fully implemented, tested, and documented.
