@@ -139,7 +139,8 @@
         <textarea
           name="highlights"
           placeholder="The best moments, wins, or things you're grateful for..."
-        >{{ highlights or '' }}</textarea>
+          maxlength="2000"
+        >{{ highlights|e if highlights else '' }}</textarea>
       </div>
 
       <div class="field-group">
@@ -147,7 +148,8 @@
         <textarea
           name="obstacles"
           placeholder="Difficulties, blockers, or things that didn't go as planned..."
-        >{{ obstacles or '' }}</textarea>
+          maxlength="2000"
+        >{{ obstacles|e if obstacles else '' }}</textarea>
       </div>
 
       <div class="field-group">
@@ -155,7 +157,8 @@
         <textarea
           name="progress"
           placeholder="Steps forward, tasks completed, skills improved..."
-        >{{ progress or '' }}</textarea>
+          maxlength="2000"
+        >{{ progress|e if progress else '' }}</textarea>
       </div>
 
       <div class="field-group">
@@ -163,13 +166,15 @@
         <textarea
           name="expectations"
           placeholder="Goals, things you're looking forward to, intentions..."
-        >{{ expectations or '' }}</textarea>
+          maxlength="2000"
+        >{{ expectations|e if expectations else '' }}</textarea>
       </div>
 
       <button type="submit">Get my reflection →</button>
     </form>
 
     {% if reflection %}
+      {# Note: reflection is auto-escaped by Jinja2. Do NOT use |safe filter here to prevent XSS. #}
       <div class="reflection-box">{{ reflection }}</div>
       <p class="reflection-label">Your daily reflection</p>
     {% endif %}
