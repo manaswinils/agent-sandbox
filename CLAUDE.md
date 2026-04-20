@@ -2,6 +2,20 @@
 
 This file tells Claude Code how to work with this repository.
 
+## Living context documents
+
+This repo maintains a set of **living documents** that are updated automatically
+by the pipeline after every merged PR. Always read these before making changes:
+
+| Document | What it contains |
+|---|---|
+| `ARCHITECTURE.md` | System components, routes, data flow, deployment topology |
+| `TEST.md` | Test strategy, what is covered, mocking patterns, E2E behaviour |
+| `DECISIONS.md` | Architectural decisions log — read before making design choices |
+| `CLAUDE.md` | *(this file)* Conventions, app structure, what NOT to do |
+| `deploy.md` | Deployment config — Azure resources, image names, health URLs |
+| `plan.md` | Current-PR implementation plan (created fresh each pipeline run) |
+
 ## What this repo is
 
 A Flask web app that takes a work description from the user and returns a
@@ -41,21 +55,24 @@ docker run -p 8000:8000 -e ANTHROPIC_API_KEY=... motivational-quote-app
 | `.github/workflows/test.yml` | Generates + runs tests on every PR |
 | `.github/workflows/azure-deploy.yml` | Tests → build → deploy on push to main |
 
-## CI/CD pipeline
+## CI/CD pipeline (agent-prototype driven)
 
 ```
-PR opened / updated
-  ├── ai-review.yml  →  .agents/review_agent.py  →  inline comments + APPROVE/REQUEST_CHANGES
-  └── test.yml       →  .agents/test_agent.py    →  generate tests → pytest --cov → coverage comment
-
-push to main (after merge)
-  └── azure-deploy.yml
-        ├── test job   →  pytest --cov-fail-under=70  (gate)
-        └── deploy job →  docker build → push to ACR → az containerapp update
+Stage 1  PLAN           — explore repo + living docs → write plan.md
+Stage 2  IMPLEMENT      — coding agent reads all living docs → implements → opens PR
+Stage 3  TEST           — generate pytest tests → run locally
+Stage 4  REVIEW         — review agent reads CLAUDE.md + ARCHITECTURE.md → review PR
+Stage 5  RESOLVE        — coding agent addresses comments → resolve_all_review_threads
+Stage 6  TEST (re-run)  — re-run tests on updated branch
+Stage 7  BUILD+STAGING  — az acr build → deploy to staging Container App
+Stage 8  E2E STAGING    — Puppeteer tests against live staging (real Anthropic calls)
+Stage 9  COMMIT         — squash-merge PR to main
+Stage 10 UPDATE DOCS    — docs_agent updates ARCHITECTURE.md, TEST.md, DECISIONS.md, CLAUDE.md
+Stage 11 DEPLOY PROD    — az containerapp update → prod (same image tag, no rebuild)
+Stage 12 E2E PROD       — Puppeteer tests against prod; on fail: rollback + revert + issue
 ```
 
-Auto-merge is enabled on approval: when the review agent approves a PR, GitHub
-squash-merges it automatically once all checks pass.
+The pipeline enforces: **all review threads must be resolved before staging deploy**.
 
 ## Testing
 
