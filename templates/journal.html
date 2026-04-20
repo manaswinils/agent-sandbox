@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Journal — HOPE Framework</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      padding: 2rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 1.5rem;
+      padding: 3rem 2.5rem;
+      max-width: 640px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    form { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .field-group {
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: rgba(255,255,255,0.85);
+    }
+
+    label .letter {
+      color: #4ecdc4;
+      font-weight: 700;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 0.85rem 1.1rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    textarea::placeholder { color: rgba(255,255,255,0.35); }
+    textarea:focus { border-color: rgba(78, 205, 196, 0.6); }
+
+    button {
+      padding: 0.85rem;
+      border-radius: 0.75rem;
+      border: none;
+      background: #4ecdc4;
+      color: #1a1a2e;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+    button:hover { opacity: 0.88; }
+
+    .reflection-box {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      background: rgba(78, 205, 196, 0.15);
+      border: 1px solid rgba(78, 205, 196, 0.35);
+      font-size: 1.05rem;
+      line-height: 1.65;
+      text-align: left;
+    }
+
+    .reflection-label {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.45);
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    .error {
+      margin-top: 1.5rem;
+      color: #ff6b6b;
+      font-size: 0.9rem;
+    }
+
+    .nav-link {
+      display: inline-block;
+      margin-top: 2rem;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: rgba(255,255,255,0.8); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📓 Daily Journal</h1>
+    <p class="subtitle">Reflect on your day using the HOPE framework</p>
+
+    <form method="POST">
+      <div class="field-group">
+        <label><span class="letter">H</span>ighlights — What went well today?</label>
+        <textarea
+          name="highlights"
+          placeholder="The best moments, wins, or things you're grateful for..."
+        >{{ highlights or '' }}</textarea>
+      </div>
+
+      <div class="field-group">
+        <label><span class="letter">O</span>bstacles — What challenges did you face?</label>
+        <textarea
+          name="obstacles"
+          placeholder="Difficulties, blockers, or things that didn't go as planned..."
+        >{{ obstacles or '' }}</textarea>
+      </div>
+
+      <div class="field-group">
+        <label><span class="letter">P</span>rogress — What progress did you make?</label>
+        <textarea
+          name="progress"
+          placeholder="Steps forward, tasks completed, skills improved..."
+        >{{ progress or '' }}</textarea>
+      </div>
+
+      <div class="field-group">
+        <label><span class="letter">E</span>xpectations — What do you hope for tomorrow?</label>
+        <textarea
+          name="expectations"
+          placeholder="Goals, things you're looking forward to, intentions..."
+        >{{ expectations or '' }}</textarea>
+      </div>
+
+      <button type="submit">Get my reflection →</button>
+    </form>
+
+    {% if reflection %}
+      <div class="reflection-box">{{ reflection }}</div>
+      <p class="reflection-label">Your daily reflection</p>
+    {% endif %}
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+
+    <a href="/" class="nav-link">← Back to Quote Generator</a>
+  </div>
+</body>
+</html>

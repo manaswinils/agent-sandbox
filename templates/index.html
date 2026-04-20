@@ -94,6 +94,16 @@
       color: #ff6b6b;
       font-size: 0.9rem;
     }
+
+    .nav-link {
+      display: inline-block;
+      margin-top: 2rem;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.85rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: rgba(255,255,255,0.8); }
   </style>
 </head>
 <body>
@@ -121,6 +131,8 @@
     {% if error %}
       <p class="error">{{ error }}</p>
     {% endif %}
+
+    <a href="/journal" class="nav-link">📓 Daily Journal</a>
   </div>
 </body>
 </html>
