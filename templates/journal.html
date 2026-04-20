@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Journal — HOPE Framework</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      padding: 2rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 1.5rem;
+      padding: 3rem 2.5rem;
+      max-width: 640px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+
+    .nav-link {
+      display: inline-block;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+    .nav-link:hover { color: #fff; }
+
+    form { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+    }
+
+    .label-hint {
+      font-weight: 400;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.8rem;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 0.85rem 1.1rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    textarea::placeholder { color: rgba(255,255,255,0.35); }
+    textarea:focus { border-color: rgba(255,255,255,0.5); }
+
+    button {
+      padding: 0.85rem;
+      border-radius: 0.75rem;
+      border: none;
+      background: #e94560;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+    button:hover { opacity: 0.88; }
+
+    .reflection-box {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      background: rgba(233, 69, 96, 0.15);
+      border: 1px solid rgba(233, 69, 96, 0.35);
+      font-size: 1rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
+    .reflection-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .error {
+      margin-top: 1.5rem;
+      color: #ff6b6b;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <header>
+      <h1>📓 Daily Journal</h1>
+      <p class="subtitle">Reflect on your day using the HOPE framework</p>
+      <a href="/" class="nav-link">← Back to Motivational Quotes</a>
+    </header>
+
+    <form method="post" action="/journal">
+      <section class="form-group">
+        <label for="highlights">
+          Highlights
+          <span class="label-hint">— What were today's highlights?</span>
+        </label>
+        <textarea
+          name="highlights"
+          id="highlights"
+          placeholder="The best moments, wins, or things that made you smile..."
+        >{{ highlights or '' }}</textarea>
+      </section>
+
+      <section class="form-group">
+        <label for="obstacles">
+          Obstacles
+          <span class="label-hint">— What obstacles did you face?</span>
+        </label>
+        <textarea
+          name="obstacles"
+          id="obstacles"
+          placeholder="Challenges, setbacks, or difficulties you encountered..."
+        >{{ obstacles or '' }}</textarea>
+      </section>
+
+      <section class="form-group">
+        <label for="progress">
+          Progress
+          <span class="label-hint">— What progress did you make?</span>
+        </label>
+        <textarea
+          name="progress"
+          id="progress"
+          placeholder="Steps forward, things you learned, or tasks completed..."
+        >{{ progress or '' }}</textarea>
+      </section>
+
+      <section class="form-group">
+        <label for="expectations">
+          Expectations
+          <span class="label-hint">— What are your expectations for tomorrow?</span>
+        </label>
+        <textarea
+          name="expectations"
+          id="expectations"
+          placeholder="Goals, hopes, or what you're looking forward to..."
+        >{{ expectations or '' }}</textarea>
+      </section>
+
+      <button type="submit">Get My Reflection →</button>
+    </form>
+
+    {% if reflection %}
+      <div class="reflection-box">
+        <div class="reflection-title">Your Daily Reflection</div>
+        {{ reflection }}
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
+  </main>
+</body>
+</html>

@@ -282,11 +282,170 @@ async function testNotFoundPage(page) {
   }
 }
 
+async function testJournalPageStructure(page) {
+  console.log('\n[e2e] Test: Journal page structure');
+  let res;
+  try {
+    res = await page.goto(`${BASE_URL}/journal`, { waitUntil: 'networkidle0', timeout: 15000 });
+  } catch (e) {
+    fail(`/journal navigation failed: ${e.message}`);
+    return;
+  }
+
+  if (res.status() === 200) {
+    pass('/journal returned HTTP 200');
+  } else {
+    fail(`/journal returned HTTP ${res.status()}, expected 200`);
+    return;
+  }
+
+  const title = await page.title();
+  if (title && title.includes('Journal')) {
+    pass(`Page title contains "Journal": "${title}"`);
+  } else {
+    fail(`Page title does not contain "Journal": "${title}"`);
+  }
+
+  const form = await page.$('form[method="post"]');
+  if (form) {
+    pass('<form method="post"> element present');
+  } else {
+    fail('No <form method="post"> element found on journal page');
+    return;
+  }
+
+  // Check all four HOPE textareas
+  const fields = ['highlights', 'obstacles', 'progress', 'expectations'];
+  for (const field of fields) {
+    const textarea = await page.$(`textarea#${field}`);
+    if (textarea) {
+      pass(`Textarea #${field} present`);
+    } else {
+      fail(`Textarea #${field} not found`);
+    }
+  }
+
+  const submitBtn = await page.$('button[type="submit"]');
+  if (submitBtn) {
+    pass('Submit button present');
+  } else {
+    fail('No submit button found');
+  }
+
+  // Check navigation link back to main page
+  const navLink = await page.$('a[href="/"]');
+  if (navLink) {
+    pass('Navigation link back to "/" present');
+  } else {
+    fail('No navigation link back to "/" found');
+  }
+}
+
+async function testJournalRealAnthropicAPICall(page) {
+  console.log('\n[e2e] Test: Journal form submission with live Anthropic API call');
+  try {
+    await page.goto(`${BASE_URL}/journal`, { waitUntil: 'networkidle0', timeout: 15000 });
+  } catch (e) {
+    fail(`Navigation to journal page failed: ${e.message}`);
+    return;
+  }
+
+  // Fill in all four HOPE fields
+  const entries = {
+    highlights: 'Completed a major project milestone and received positive feedback from the team.',
+    obstacles: 'Faced some technical challenges with the deployment pipeline.',
+    progress: 'Learned new debugging techniques and improved my problem-solving skills.',
+    expectations: 'Looking forward to starting the next phase of the project tomorrow.',
+  };
+
+  for (const [field, text] of Object.entries(entries)) {
+    const textarea = await page.$(`textarea#${field}`);
+    if (!textarea) {
+      fail(`Cannot test journal — ${field} textarea not found`);
+      return;
+    }
+    await textarea.type(text);
+  }
+
+  const submitBtn = await page.$('button[type="submit"]');
+  if (!submitBtn) {
+    fail('Cannot test journal — submit button not found');
+    return;
+  }
+
+  // Real Anthropic API call — Claude can take 3-15s to respond
+  try {
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 }),
+      submitBtn.click(),
+    ]);
+    pass('Journal form submitted — Anthropic API call completed');
+  } catch (e) {
+    fail(`API call timed out or navigation failed (60s limit): ${e.message}`);
+    return;
+  }
+
+  // ── check for server/API errors ──────────────────────────────────────────
+
+  const errorEl = await page.$('.error');
+  if (errorEl) {
+    const errorText = await errorEl.evaluate(el => el.innerText.trim());
+    fail(`App returned an error message: "${errorText}"`);
+    return;
+  }
+  pass('No .error element — API call did not raise an exception');
+
+  // Generic server error phrases in page body
+  const bodyText = await page.evaluate(() => document.body.innerText.trim());
+  const lower = bodyText.toLowerCase();
+  const errorPhrases = ['internal server error', 'traceback', '500', 'invalid api key', 'authentication error'];
+  const found = errorPhrases.find(p => lower.includes(p));
+  if (found) {
+    fail(`Response body contains error phrase: "${found}"`);
+    return;
+  }
+  pass('No server error phrases in response body');
+
+  // ── validate the reflection rendered in .reflection-box ──────────────────
+
+  const reflectionBox = await page.$('.reflection-box');
+  if (!reflectionBox) {
+    fail('.reflection-box element not present — reflection was not rendered');
+    return;
+  }
+  pass('.reflection-box element is present');
+
+  const reflectionText = await reflectionBox.evaluate(el => el.innerText.trim());
+
+  if (reflectionText.length === 0) {
+    fail('.reflection-box is empty — Anthropic returned no content');
+    return;
+  }
+  pass(`Reflection is non-empty (${reflectionText.length} chars)`);
+
+  if (reflectionText.length >= 50) {
+    pass(`Reflection has substantial length: ${reflectionText.length} chars`);
+  } else {
+    fail(`Reflection is suspiciously short (${reflectionText.length} chars): "${reflectionText}"`);
+  }
+
+  // Must contain real words, not just punctuation
+  const wordCount = reflectionText.split(/\s+/).filter(w => /[a-zA-Z]{2,}/.test(w)).length;
+  if (wordCount >= 10) {
+    pass(`Reflection contains ${wordCount} words`);
+  } else {
+    fail(`Reflection has too few words (${wordCount}): "${reflectionText}"`);
+  }
+
+  // Log the actual reflection so the pipeline output shows what Claude returned
+  console.log(`  → Reflection text: "${reflectionText.substring(0, 150)}${reflectionText.length > 150 ? '...' : ''}"`);
+}
+
 // ── runner ────────────────────────────────────────────────────────────────────
 
 (async () => {
   console.log(`\n[e2e] Starting E2E tests against: ${BASE_URL}`);
-  console.log(`[e2e] Note: testRealAnthropicAPICall makes a live Anthropic API call\n`);
+  console.log(`[e2e] Note: testRealAnthropicAPICall and testJournalRealAnthropicAPICall make live Anthropic API calls\n`);
 
   const browser = await puppeteer.launch({
     headless: true,
@@ -310,6 +469,8 @@ async function testNotFoundPage(page) {
     await testRealAnthropicAPICall(page);
     await testEmptyFormSubmission(page);
     await testNotFoundPage(page);
+    await testJournalPageStructure(page);
+    await testJournalRealAnthropicAPICall(page);
   } catch (err) {
     issues.push(`Test runner error: ${err.message}`);
   } finally {
