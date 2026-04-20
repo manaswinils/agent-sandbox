@@ -20,7 +20,7 @@ the application. Update this file when infrastructure changes.
 - **App Name:** motivational-quote-app-staging
 - **Container Apps Environment:** motivational-quote-env
 - **Live URL:** https://motivational-quote-app-staging.delightfulfield-c939fa9a.eastus.azurecontainerapps.io
-- **Min Replicas:** 0 (scale to zero when idle)
+- **Min Replicas:** 1 (always on for reliable health checks)
 
 Deploy command (replace `<TAG>`):
 ```bash
