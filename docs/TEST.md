@@ -21,7 +21,8 @@
 | Fixture | Purpose |
 |---|---|
 | `client` | Flask test client with `app.config["TESTING"] = True` |
-| `mock_anthropic` | Patches `app.client` with `MagicMock`; sets `return_value.content[0].text = "Test quote"` |
+| `mock_anthropic` | Patches `app.client` with `MagicMock`; sets `return_value.content[0].text = "Keep going, you're doing great."` |
+| `mock_anthropic_error` | Patches `app.client` to raise `Exception("Anthropic API unavailable")` — simulates API failure |
 
 ### What is covered
 
@@ -32,6 +33,9 @@
 | `POST /` with empty `work` → Anthropic NOT called, no `.quote-box` | ✅ | ✅ |
 | `POST /` with whitespace-only `work` → treated as empty | ✅ | ✅ |
 | `POST /` when Anthropic raises `Exception` → `.error` rendered, no traceback | ✅ | ✅ |
+| `GET /journal` returns 200 with empty HOPE form | ✅ | ✅ |
+| `POST /journal` with HOPE fields → Anthropic called, reflection rendered | ✅ | ✅ |
+| `POST /journal` when Anthropic raises `Exception` → `.error` rendered | ✅ | ✅ |
 | `/health` returns 200 `{"status": "ok"}` | ✅ | — |
 | `/ping` returns 200 `{"pong": true}` | ✅ | — |
 | `/version` returns 200 with python_version + date | ✅ | — |
@@ -51,7 +55,8 @@ with patch('app.client') as mock_client:
     # ... test assertions
 ```
 
-Never use real Anthropic API in unit or functional tests — always mock `app.client`.
+The same pattern applies to `/journal` — mock `app.client` and assert the reflection
+text appears in the rendered response. Never use real Anthropic API in unit or functional tests.
 
 ## E2E Tests (`tests/e2e/test_e2e.js`)
 
@@ -67,6 +72,8 @@ Browser-based tests using Puppeteer. Run against live deployed environments (sta
 | `testRealAnthropicAPICall` | Types "software engineering", submits (60s timeout), checks: no `.error` element, `.quote-box` present, quote ≥ 30 chars, ≥ 5 real words, `.work-label` shows input |
 | `testEmptyFormSubmission` | Empty submit either blocked by HTML5 validation or returns without `.quote-box` and no server error |
 | `testNotFoundPage` | Unmatched route returns non-500 status code |
+| `testJournalPageStructure` | `GET /journal` loads (200), HOPE form fields present (highlights, obstacles, progress, expectations) |
+| `testJournalReflectionGeneration` | Submits sample HOPE entries (60s timeout), checks: no `.error` element, reflection text present and ≥ 50 chars |
 
 ### Running E2E tests locally
 
@@ -89,3 +96,4 @@ If prod E2E fails:
 - Anthropic API response time under load
 - Azure infrastructure behaviour (validated only by HTTP health checks)
 - Browser compatibility (Puppeteer uses Chromium only)
+- Individual HOPE field validation (e.g. all-empty journal submission behaviour)

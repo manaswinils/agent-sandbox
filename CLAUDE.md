@@ -19,7 +19,8 @@ by the pipeline after every merged PR. Always read these before making changes:
 ## What this repo is
 
 A Flask web app that takes a work description from the user and returns a
-Claude-generated motivational quote. It is the **target repo** for the
+Claude-generated motivational quote, and provides a daily HOPE journaling feature
+with AI-generated reflections. It is the **target repo** for the
 coding/review/test agents in `agent-prototype`.
 
 ## Running locally
@@ -45,8 +46,9 @@ docker run -p 8000:8000 -e ANTHROPIC_API_KEY=... motivational-quote-app
 
 | Path | Purpose |
 |---|---|
-| `app.py` | Flask app — routes: `GET/POST /`, `GET /health`, `GET /ping`, and `GET /version` |
-| `templates/index.html` | Jinja2 template — form + quote display |
+| `app.py` | Flask app — routes: `GET/POST /`, `GET/POST /journal`, `GET /health`, `GET /ping`, and `GET /version` |
+| `templates/index.html` | Jinja2 template — quote form + quote display + nav link to /journal |
+| `templates/journal.html` | Jinja2 template — HOPE journal form + reflection display |
 | `Dockerfile` | Container image for Azure deployment |
 | `Procfile` | Azure App Service startup command |
 | `.agents/review_agent.py` | AI PR review agent (called by GitHub Actions) |
@@ -87,6 +89,7 @@ pytest tests/ --cov=app --cov-report=term-missing
 Shared fixtures are in `tests/conftest.py`:
 - `client` — Flask test client with `TESTING=True`
 - `mock_anthropic` — patches `app.client` so no real API calls are made in tests
+- `mock_anthropic_error` — patches `app.client` to raise an exception
 
 Coverage threshold: **70%** (enforced in CI).
 

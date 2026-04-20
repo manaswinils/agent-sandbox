@@ -6,14 +6,17 @@
 ## Overview
 
 A Flask web app that takes a user's work description and returns a Claude-generated
-motivational quote. Deployed to Azure Container Apps via an AI-driven CI/CD pipeline.
+motivational quote, and also provides a daily HOPE journaling feature with
+AI-generated reflections. Deployed to Azure Container Apps via an AI-driven CI/CD pipeline.
 
 ## Components
 
 | Component | Path | Purpose |
 |---|---|---|
 | Flask application | `app.py` | Main web server — routes, Anthropic client, response rendering |
-| HTML template | `templates/index.html` | Jinja2 template — form input + quote display |
+| Quote template | `templates/index.html` | Jinja2 template — form input + quote display + nav link to journal |
+| Journal template | `templates/journal.html` | Jinja2 template — HOPE journal form + reflection display |
+| Journal prompt builder | `app.py:_build_journal_prompt()` | Builds Claude prompt from four HOPE journal fields |
 | Docker container | `Dockerfile` | Container image definition for Azure deployment |
 | Process config | `Procfile` | gunicorn startup command (port 8000) |
 | Health endpoint | `app.py:/health` | Returns `{"status": "ok"}` — used by pipeline health checks |
@@ -24,11 +27,15 @@ motivational quote. Deployed to Azure Container Apps via an AI-driven CI/CD pipe
 |---|---|---|---|
 | GET | `/` | Render empty quote form | 200 HTML |
 | POST | `/` | Submit `work` → generate quote → render result | 200 HTML |
+| GET | `/journal` | Render empty HOPE journal form | 200 HTML |
+| POST | `/journal` | Submit HOPE fields → generate reflection → render result | 200 HTML |
 | GET | `/health` | Health check | `{"status": "ok"}` |
 | GET | `/ping` | Liveness probe | `{"pong": true}` |
 | GET | `/version` | Build info | `{"python_version": "...", "date": "..."}` |
 
 ## Data Flow
+
+### Quote flow (`/`)
 
 ```
 User → POST / (form field: work=<description>)
@@ -57,11 +64,40 @@ Error path (Anthropic raises Exception):
   └── <p class="error">{{ error }}</p>
 ```
 
+### HOPE Journal flow (`/journal`)
+
+```
+User → POST /journal (form fields: highlights, obstacles, progress, expectations)
+  │
+  ▼
+app.py — journal() route
+  │  strips whitespace from all four fields
+  │  calls _build_journal_prompt(highlights, obstacles, progress, expectations)
+  ▼
+Anthropic Claude (claude-haiku-4-5-20251001)
+  prompt: structured HOPE framework prompt requesting 150-200 word reflection
+          covering: acknowledge highlights, perspective on obstacles,
+          recognize progress, connect expectations, actionable insight
+  │
+  ▼
+reflection = response.content[0].text.strip()
+  │
+  ▼
+render_template("journal.html", reflection=reflection,
+                highlights=highlights, obstacles=obstacles,
+                progress=progress, expectations=expectations, error=None)
+  │
+  └── reflection displayed in template on success
+
+Error path (Anthropic raises Exception):
+  render_template("journal.html", error="Could not generate reflection: <msg>")
+```
+
 ## External Dependencies
 
 | Service | Purpose | Config |
 |---|---|---|
-| Anthropic API | Quote generation via Claude | `ANTHROPIC_API_KEY` env var |
+| Anthropic API | Quote generation + journal reflection via Claude | `ANTHROPIC_API_KEY` env var |
 | Azure Container Registry | Docker image storage | `motivationalquoteacr.azurecr.io` |
 | Azure Container Apps | Production + staging hosting | See `deploy.md` |
 
@@ -86,9 +122,11 @@ Source (GitHub: manaswinils/agent-sandbox)
 
 Both environments run the same Docker image (build once, promote to prod).
 Staging has `min-replicas=1` (always on) to eliminate cold-start delays during E2E tests.
+Deployed image tag: `20260420-184200`.
 
 ## Key Design Constraints
 
 - The Anthropic client `client = Anthropic()` is instantiated once at module level (thread-safe).
 - The app does not store any state between requests — fully stateless.
 - Port: gunicorn binds to `0.0.0.0:8000`; the Azure Container App ingress targets port 8000.
+- `_build_journal_prompt()` is a pure helper function with no side effects — testable in isolation.

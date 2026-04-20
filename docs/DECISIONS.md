@@ -5,6 +5,25 @@
 
 ---
 
+## ADR-005: HOPE journaling feature with structured prompt builder
+
+**Date:** 2026-04
+**Decision:** Added a `/journal` route implementing the HOPE framework (Highlights,
+Obstacles, Progress, Expectations). A dedicated `_build_journal_prompt()` helper
+constructs the Claude prompt from four form fields. Claude (claude-haiku-4-5-20251001)
+generates a 150-200 word personalized daily reflection.
+**Rationale:** Separating prompt construction into `_build_journal_prompt()` keeps
+the route handler focused on HTTP concerns and makes the prompt logic independently
+testable. Using the same model and module-level client as the quote feature avoids
+additional configuration and maintains consistency.
+**Tradeoffs:** All four HOPE fields are optional — if a user submits an empty journal,
+Claude still generates a response based on "(not provided)" placeholders. No
+server-side validation enforces at least one non-empty field.
+**Alternative considered:** A separate microservice or dedicated endpoint per HOPE
+field — rejected as unnecessary complexity for a single-app deployment.
+
+---
+
 ## ADR-004: Living documents maintained by pipeline
 
 **Date:** 2026-04
