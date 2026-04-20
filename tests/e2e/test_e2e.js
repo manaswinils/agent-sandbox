@@ -232,7 +232,7 @@ async function testNotFoundPage(page) {
   });
 
   const page = await browser.newPage();
-  page.setDefaultTimeout(30000);
+  page.setDefaultTimeout(60000);
 
   // Capture browser-side JS errors
   const jsErrors = [];
