@@ -15,6 +15,7 @@ client = Anthropic()
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    """Render main quote generator page and handle form submission."""
     quote = None
     work = None
     error = None
@@ -42,18 +43,74 @@ def index():
     return render_template("index.html", quote=quote, work=work, error=error)
 
 
+@app.route("/journal", methods=["GET", "POST"])
+def journal():
+    """Render HOPE framework journal page and generate Claude reflection."""
+    reflection = None
+    error = None
+    highlights = ""
+    obstacles = ""
+    progress = ""
+    expectations = ""
+
+    if request.method == "POST":
+        highlights = request.form.get("highlights", "").strip()
+        obstacles = request.form.get("obstacles", "").strip()
+        progress = request.form.get("progress", "").strip()
+        expectations = request.form.get("expectations", "").strip()
+
+        # Only call API if at least one field is filled
+        if highlights or obstacles or progress or expectations:
+            try:
+                response = client.messages.create(
+                    model="claude-haiku-4-5-20251001",
+                    max_tokens=1024,
+                    messages=[{
+                        "role": "user",
+                        "content": (
+                            "You are a thoughtful daily journal coach. The user filled out "
+                            "their HOPE framework journal for today. Provide a warm, insightful "
+                            "3-5 sentence reflection that synthesizes their day, acknowledges "
+                            "their challenges, celebrates their wins, and offers encouragement "
+                            "for tomorrow.\n\n"
+                            f"Highlights: {highlights}\n"
+                            f"Obstacles: {obstacles}\n"
+                            f"Progress: {progress}\n"
+                            f"Expectations: {expectations}\n\n"
+                            "Reply with just the reflection, nothing else."
+                        ),
+                    }],
+                )
+                reflection = response.content[0].text.strip()
+            except Exception as e:
+                error = f"Could not generate reflection: {e}"
+
+    return render_template(
+        "journal.html",
+        reflection=reflection,
+        error=error,
+        highlights=highlights,
+        obstacles=obstacles,
+        progress=progress,
+        expectations=expectations,
+    )
+
+
 @app.route("/health", methods=["GET"])
 def health():
+    """Health check endpoint."""
     return jsonify(status="ok")
 
 
 @app.route("/ping", methods=["GET"])
 def ping():
+    """Liveness probe endpoint."""
     return jsonify(pong=True)
 
 
 @app.route("/version", methods=["GET"])
 def version():
+    """Return build/version info."""
     return jsonify(python_version=platform.python_version(), date=date.today().isoformat())
 
 
