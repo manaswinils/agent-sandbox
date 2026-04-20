@@ -1,29 +1,54 @@
 # Implementation Plan: add a /ping endpoint that returns JSON {"pong": true}
 
 ## Overview
-The `/ping` endpoint already exists in the codebase. It is defined in `app.py`, returns `{"pong": true}` as JSON, is fully tested in `tests/test_ping.py`, and is documented in `CLAUDE.md`. No changes are required.
+The goal is to add a `GET /ping` endpoint to the Flask application that returns `{"pong": true}` as a JSON response with HTTP 200. Upon investigation, **this endpoint already exists** in `app.py` (line ~46), has corresponding tests in `tests/test_ping.py`, and is documented in `CLAUDE.md`. No code changes are required. This plan documents the current implementation and the verification steps to confirm correctness.
 
 ## Files to Create
 | File | Purpose |
 |------|---------|
-| *(none)* | All necessary files already exist |
+| *(none — all files already exist)* | |
 
 ## Files to Modify
 | File | Change Required |
 |------|----------------|
-| *(none)* | All necessary changes are already in place |
+| *(none — no modifications needed)* | |
+
+## Current Implementation (Already Complete)
+
+### `app.py` — Route definition (already present)
+```python
+@app.route("/ping", methods=["GET"])
+def ping():
+    return jsonify(pong=True)
+```
+This uses Flask's `jsonify` to return `{"pong": true}` with `Content-Type: application/json` and HTTP 200.
+
+### `tests/test_ping.py` — Unit tests (already present)
+Three tests exist covering:
+1. `test_ping_status_code` — verifies HTTP 200
+2. `test_ping_content_type` — verifies `application/json` MIME type
+3. `test_ping_json_body` — verifies response body equals `{"pong": True}`
+
+### `CLAUDE.md` — Documentation (already present)
+The app structure table lists `GET /ping` as a documented route.
 
 ## Implementation Approach
-1. **Route already defined**: `app.py` contains a `GET /ping` route handler (`def ping()`) that calls `return jsonify(pong=True)`, producing the response `{"pong": true}` with a `200` status code and `application/json` content type.
-2. **Tests already exist**: `tests/test_ping.py` contains three tests — `test_ping_status_code` (asserts HTTP 200), `test_ping_content_type` (asserts `application/json`), and `test_ping_json_body` (asserts `{"pong": True}`). These use the shared `client` fixture from `tests/conftest.py`.
-3. **Documentation already updated**: `CLAUDE.md` lists `GET /ping` in the routes table under "App structure."
-4. **No further action is needed.** Running `pytest tests/test_ping.py` will confirm the endpoint works as expected.
+1. **No action needed.** The `/ping` endpoint is already defined in `app.py` using `@app.route("/ping", methods=["GET"])` returning `jsonify(pong=True)`.
+2. Tests are already in place in `tests/test_ping.py` using the shared `client` fixture from `tests/conftest.py`.
+3. Documentation in `CLAUDE.md` already lists the `/ping` route in the app structure table.
+
+If the endpoint did *not* exist, the steps would be:
+1. Add a `ping()` function in `app.py` decorated with `@app.route("/ping", methods=["GET"])` that returns `jsonify(pong=True)`, following the same pattern as the existing `/health` and `/version` endpoints.
+2. Create `tests/test_ping.py` with tests for status code (200), content type (`application/json`), and JSON body (`{"pong": true}`), using the `client` fixture from `conftest.py`.
+3. Update the route table in `CLAUDE.md` to include `GET /ping`.
 
 ## Test Strategy
-- **Unit tests**: Already covered by `tests/test_ping.py` — verifies status code (200), content type (`application/json`), and response body (`{"pong": true}`).
-- **Functional test**: Run `flask run` locally and `curl http://localhost:5000/ping` to confirm `{"pong":true}` is returned.
-- **End-to-end validation**: The existing E2E test suite (`tests/e2e/test_e2e.js`) does not explicitly test `/ping`, but the unit tests provide sufficient coverage. Optionally, add a Puppeteer test that hits `/ping` and asserts the JSON response.
+- **Unit tests**: Run `pytest tests/test_ping.py -v` to confirm all three existing tests pass (status code, content type, JSON body).
+- **Full suite**: Run `pytest tests/ --cov=app --cov-report=term-missing` to verify coverage remains ≥70%.
+- **Manual validation**: `flask run` then `curl http://localhost:5000/ping` — expect `{"pong":true}` with HTTP 200.
+- **E2E**: The Puppeteer e2e tests don't explicitly test `/ping`, but the endpoint can be verified against a running deployment via `curl`.
 
 ## Risks and Assumptions
-- **No risks**: The endpoint is already fully implemented, tested, and documented.
-- **Assumption**: The existing test suite passes. Verify by running `pytest tests/ --cov=app --cov-report=term-missing` locally.
+- **Already implemented**: The endpoint, tests, and documentation are all already in place. There is no work to do.
+- **Assumption**: The goal refers to the existing `app.py` Flask application as the target for the endpoint.
+- **Test ownership**: Per `CLAUDE.md`, tests are generated by an AI test agent on each PR and should not be modified manually; the existing `test_ping.py` appears to have been generated by that agent.
