@@ -14,7 +14,8 @@ by the pipeline after every merged PR. Always read these before making changes:
 | `docs/DECISIONS.md` | Architectural decisions log — read before making design choices |
 | `CLAUDE.md` | *(this file)* Conventions, app structure, what NOT to do |
 | `docs/deploy.md` | Deployment config — Azure resources, image names, health URLs |
-| `plan.md` | Current-PR implementation plan (created fresh each pipeline run) |
+| `plan.md` | Latest implementation plan (pointer to most recent plan in plans/) |
+| `plans/` | Archive of all implementation plans — one file per pipeline run |
 
 ## What this repo is
 
