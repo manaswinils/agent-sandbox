@@ -140,7 +140,7 @@
           name="highlights"
           placeholder="The best moments, wins, or things you're grateful for..."
           maxlength="2000"
-        >{{ highlights|e if highlights else '' }}</textarea>
+        >{{ highlights or '' }}</textarea>
       </div>
 
       <div class="field-group">
@@ -149,7 +149,7 @@
           name="obstacles"
           placeholder="Difficulties, blockers, or things that didn't go as planned..."
           maxlength="2000"
-        >{{ obstacles|e if obstacles else '' }}</textarea>
+        >{{ obstacles or '' }}</textarea>
       </div>
 
       <div class="field-group">
@@ -158,7 +158,7 @@
           name="progress"
           placeholder="Steps forward, tasks completed, skills improved..."
           maxlength="2000"
-        >{{ progress|e if progress else '' }}</textarea>
+        >{{ progress or '' }}</textarea>
       </div>
 
       <div class="field-group">
@@ -167,7 +167,7 @@
           name="expectations"
           placeholder="Goals, things you're looking forward to, intentions..."
           maxlength="2000"
-        >{{ expectations|e if expectations else '' }}</textarea>
+        >{{ expectations or '' }}</textarea>
       </div>
 
       <button type="submit">Get my reflection →</button>

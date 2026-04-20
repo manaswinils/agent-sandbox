@@ -1,4 +1,5 @@
 """Motivational quote web app powered by Claude."""
+
 import os
 import platform
 from datetime import date
@@ -24,12 +25,15 @@ JOURNAL_SYSTEM_PROMPT = (
 )
 
 
-def _truncate_field(value: str) -> str:
-    """Truncate field to MAX_FIELD_LENGTH chars."""
-    return value[:MAX_FIELD_LENGTH]
+def _sanitize_field(value: str) -> str:
+    """Truncate, strip, and escape < > to prevent XML tag injection."""
+    cleaned = value.strip()[:MAX_FIELD_LENGTH]
+    return cleaned.replace("<", "&lt;").replace(">", "&gt;")
 
 
-def _build_journal_user_message(highlights: str, obstacles: str, progress: str, expectations: str) -> str:
+def _build_journal_user_message(
+    highlights: str, obstacles: str, progress: str, expectations: str
+) -> str:
     """Build user message with XML-tagged fields to separate data from instructions."""
     return (
         "Here is my HOPE journal entry for today:\n\n"
@@ -38,6 +42,38 @@ def _build_journal_user_message(highlights: str, obstacles: str, progress: str, 
         f"<progress>{progress}</progress>\n"
         f"<expectations>{expectations}</expectations>"
     )
+
+
+def _get_journal_fields(form):
+    """Extract and sanitize all four HOPE fields from form data."""
+    return (
+        _sanitize_field(form.get("highlights", "")),
+        _sanitize_field(form.get("obstacles", "")),
+        _sanitize_field(form.get("progress", "")),
+        _sanitize_field(form.get("expectations", "")),
+    )
+
+
+def _generate_reflection(highlights, obstacles, progress, expectations):
+    """Call Claude API to generate a journal reflection. Returns (reflection, error)."""
+    try:
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1024,
+            system=JOURNAL_SYSTEM_PROMPT,
+            messages=[
+                {
+                    "role": "user",
+                    "content": _build_journal_user_message(
+                        highlights, obstacles, progress, expectations
+                    ),
+                }
+            ],
+        )
+        return response.content[0].text.strip(), None
+    except Exception as e:
+        app.logger.error(f"Journal API error: {e}")
+        return None, "Could not generate reflection. Please try again later."
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -54,18 +90,22 @@ def index():
                 response = client.messages.create(
                     model="claude-haiku-4-5-20251001",
                     max_tokens=256,
-                    messages=[{
-                        "role": "user",
-                        "content": (
-                            f"Give me a single short, powerful motivational quote "
-                            f"tailored for someone working on: {work}. "
-                            "Reply with just the quote and its author (if known), nothing else."
-                        ),
-                    }],
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": (
+                                f"Give me a single short, powerful motivational quote "
+                                f"tailored for someone working on: {work}. "
+                                "Reply with just the quote and its author (if known), "
+                                "nothing else."
+                            ),
+                        }
+                    ],
                 )
                 quote = response.content[0].text.strip()
             except Exception as e:
-                error = f"Could not generate quote: {e}"
+                app.logger.error(f"Quote API error: {e}")
+                error = "Could not generate quote. Please try again later."
 
     return render_template("index.html", quote=quote, work=work, error=error)
 
@@ -73,36 +113,24 @@ def index():
 @app.route("/journal", methods=["GET", "POST"])
 def journal():
     """Render HOPE framework journal page and generate Claude reflection."""
-    reflection = None
-    error = None
+    reflection = error = None
     highlights = obstacles = progress = expectations = ""
 
     if request.method == "POST":
-        # Extract and sanitize inputs (truncate to limit token costs)
-        highlights = _truncate_field(request.form.get("highlights", "").strip())
-        obstacles = _truncate_field(request.form.get("obstacles", "").strip())
-        progress = _truncate_field(request.form.get("progress", "").strip())
-        expectations = _truncate_field(request.form.get("expectations", "").strip())
-
-        if highlights or obstacles or progress or expectations:
-            try:
-                response = client.messages.create(
-                    model="claude-haiku-4-5-20251001",
-                    max_tokens=1024,
-                    system=JOURNAL_SYSTEM_PROMPT,
-                    messages=[{
-                        "role": "user",
-                        "content": _build_journal_user_message(highlights, obstacles, progress, expectations),
-                    }],
-                )
-                reflection = response.content[0].text.strip()
-            except Exception as e:
-                app.logger.error(f"Journal API error: {e}")
-                error = f"Could not generate reflection: {e}"
+        highlights, obstacles, progress, expectations = _get_journal_fields(request.form)
+        if any([highlights, obstacles, progress, expectations]):
+            reflection, error = _generate_reflection(
+                highlights, obstacles, progress, expectations
+            )
 
     return render_template(
-        "journal.html", reflection=reflection, error=error,
-        highlights=highlights, obstacles=obstacles, progress=progress, expectations=expectations,
+        "journal.html",
+        reflection=reflection,
+        error=error,
+        highlights=highlights,
+        obstacles=obstacles,
+        progress=progress,
+        expectations=expectations,
     )
 
 
