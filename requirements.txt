@@ -2,3 +2,8 @@ anthropic>=0.39.0
 flask>=3.0.0
 gunicorn>=21.2.0
 python-dotenv>=1.0.0
+# harness
+ruff>=0.8.0
+mypy>=1.13.0
+mutmut>=2.4.4
+pre-commit>=4.0.0
