@@ -1,5 +1,6 @@
 /**
  * Puppeteer E2E tests for the motivational quote app.
+ * Makes real Anthropic API calls — tests validate actual live behaviour.
  *
  * Usage:
  *   node test_e2e.js <base_url>
@@ -53,7 +54,7 @@ async function testHealthEndpoint(page) {
     const text = await page.evaluate(() => document.body.innerText.trim());
     const data = JSON.parse(text);
     if (data.status === 'ok') {
-      pass('/health JSON body contains {"status": "ok"}');
+      pass('/health JSON body is {"status": "ok"}');
     } else {
       fail(`/health JSON status is "${data.status}", expected "ok"`);
     }
@@ -81,7 +82,7 @@ async function testMainPageStructure(page) {
 
   const title = await page.title();
   if (title && title.trim().length > 0) {
-    pass(`Page has a title: "${title}"`);
+    pass(`Page title: "${title}"`);
   } else {
     fail('Page title is empty');
   }
@@ -109,8 +110,8 @@ async function testMainPageStructure(page) {
   }
 }
 
-async function testValidFormSubmission(page) {
-  console.log('\n[e2e] Test: Form submission with valid input');
+async function testRealAnthropicAPICall(page) {
+  console.log('\n[e2e] Test: Form submission with live Anthropic API call');
   try {
     await page.goto(BASE_URL, { waitUntil: 'networkidle0', timeout: 15000 });
   } catch (e) {
@@ -130,33 +131,89 @@ async function testValidFormSubmission(page) {
     return;
   }
 
-  await workInput.type('software engineering');
+  const WORK_DESCRIPTION = 'software engineering';
+  await workInput.type(WORK_DESCRIPTION);
 
+  // Real Anthropic API call — Claude can take 3-15s to respond
   try {
     await Promise.all([
-      page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 30000 }),
+      page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 60000 }),
       submitBtn.click(),
     ]);
-    pass('Form submitted (navigation completed)');
+    pass('Form submitted — Anthropic API call completed');
   } catch (e) {
-    fail(`Form submission timed out or failed: ${e.message}`);
+    fail(`API call timed out or navigation failed (60s limit): ${e.message}`);
     return;
   }
 
+  // ── check for server/API errors ──────────────────────────────────────────
+
+  // .error element in the template means the API call raised an exception
+  const errorEl = await page.$('.error');
+  if (errorEl) {
+    const errorText = await errorEl.evaluate(el => el.innerText.trim());
+    fail(`App returned an error message: "${errorText}"`);
+    return;
+  }
+  pass('No .error element — API call did not raise an exception');
+
+  // Generic server error phrases in page body
   const bodyText = await page.evaluate(() => document.body.innerText.trim());
-  if (bodyText.length > 80) {
-    pass(`Response has content (${bodyText.length} chars)`);
+  const lower = bodyText.toLowerCase();
+  const errorPhrases = ['internal server error', 'traceback', '500', 'invalid api key', 'authentication error'];
+  const found = errorPhrases.find(p => lower.includes(p));
+  if (found) {
+    fail(`Response body contains error phrase: "${found}"`);
+    return;
+  }
+  pass('No server error phrases in response body');
+
+  // ── validate the quote rendered in .quote-box ────────────────────────────
+
+  const quoteBox = await page.$('.quote-box');
+  if (!quoteBox) {
+    fail('.quote-box element not present — quote was not rendered');
+    return;
+  }
+  pass('.quote-box element is present');
+
+  const quoteText = await quoteBox.evaluate(el => el.innerText.trim());
+
+  if (quoteText.length === 0) {
+    fail('.quote-box is empty — Anthropic returned no content');
+    return;
+  }
+  pass(`Quote is non-empty (${quoteText.length} chars)`);
+
+  if (quoteText.length >= 30) {
+    pass(`Quote has substantial length: ${quoteText.length} chars`);
   } else {
-    fail(`Response body is too short (${bodyText.length} chars) — may indicate an error`);
+    fail(`Quote is suspiciously short (${quoteText.length} chars): "${quoteText}"`);
   }
 
-  const lower = bodyText.toLowerCase();
-  const errorIndicators = ['internal server error', 'traceback', 'exception', '500'];
-  const foundError = errorIndicators.find(e => lower.includes(e));
-  if (foundError) {
-    fail(`Response contains server error indicator: "${foundError}"`);
+  // Must contain real words, not just punctuation
+  const wordCount = quoteText.split(/\s+/).filter(w => /[a-zA-Z]{2,}/.test(w)).length;
+  if (wordCount >= 5) {
+    pass(`Quote contains ${wordCount} words`);
   } else {
-    pass('Response does not contain server error indicators');
+    fail(`Quote has too few words (${wordCount}): "${quoteText}"`);
+  }
+
+  // Log the actual quote so the pipeline output shows what Claude returned
+  console.log(`  → Quote text: "${quoteText.substring(0, 120)}${quoteText.length > 120 ? '...' : ''}"`);
+
+  // ── check work label rendered correctly ─────────────────────────────────
+
+  const workLabel = await page.$('.work-label');
+  if (workLabel) {
+    const labelText = await workLabel.evaluate(el => el.innerText.trim());
+    if (labelText.includes(WORK_DESCRIPTION)) {
+      pass(`Work label shows submitted input: "${labelText}"`);
+    } else {
+      fail(`Work label does not contain "${WORK_DESCRIPTION}": "${labelText}"`);
+    }
+  } else {
+    fail('.work-label element not found after successful submission');
   }
 }
 
@@ -183,7 +240,7 @@ async function testEmptyFormSubmission(page) {
     ]);
     navigated = true;
   } catch (_) {
-    // No navigation = client-side validation blocked submit — that's acceptable
+    // No navigation = HTML5 required validation blocked submit — acceptable
   }
 
   if (navigated) {
@@ -194,13 +251,18 @@ async function testEmptyFormSubmission(page) {
     } else {
       pass('Empty form submission handled without server error');
     }
-    if (lower.includes('500')) {
-      fail('Empty form submission returned HTTP 500 content');
+    // No .quote-box should appear for empty input
+    const quoteBox = await page.$('.quote-box');
+    if (!quoteBox) {
+      pass('No .quote-box rendered for empty submission (correct)');
     } else {
-      pass('No 500 error on empty submission');
+      const quoteText = await quoteBox.evaluate(el => el.innerText.trim());
+      if (quoteText.length > 0) {
+        fail('Quote was rendered despite empty input');
+      }
     }
   } else {
-    pass('Empty form submission blocked by client-side validation');
+    pass('Empty form blocked by HTML5 required validation (no navigation)');
   }
 }
 
@@ -213,7 +275,6 @@ async function testNotFoundPage(page) {
     fail(`404 test navigation failed: ${e.message}`);
     return;
   }
-  // 404 is expected; what we don't want is a 500
   if (res.status() === 500) {
     fail('Unmatched route returned HTTP 500 instead of 404');
   } else {
@@ -225,6 +286,7 @@ async function testNotFoundPage(page) {
 
 (async () => {
   console.log(`\n[e2e] Starting E2E tests against: ${BASE_URL}`);
+  console.log(`[e2e] Note: testRealAnthropicAPICall makes a live Anthropic API call\n`);
 
   const browser = await puppeteer.launch({
     headless: true,
@@ -234,11 +296,8 @@ async function testNotFoundPage(page) {
   const page = await browser.newPage();
   page.setDefaultTimeout(60000);
 
-  // Capture browser-side JS errors
   const jsErrors = [];
   page.on('pageerror', err => jsErrors.push(err.message));
-
-  // Flag unexpected 5xx from the server
   page.on('response', res => {
     if (res.status() >= 500) {
       issues.push(`Server returned HTTP ${res.status()} for ${res.url()}`);
@@ -248,21 +307,19 @@ async function testNotFoundPage(page) {
   try {
     await testHealthEndpoint(page);
     await testMainPageStructure(page);
-    await testValidFormSubmission(page);
+    await testRealAnthropicAPICall(page);
     await testEmptyFormSubmission(page);
     await testNotFoundPage(page);
   } catch (err) {
-    issues.push(`Unexpected test runner error: ${err.message}`);
+    issues.push(`Test runner error: ${err.message}`);
   } finally {
     await browser.close();
   }
 
-  // Report JS errors caught during tests
   if (jsErrors.length > 0) {
     jsErrors.forEach(e => fail(`Browser JS error: ${e}`));
   }
 
-  // Summary
   const total = passed + issues.length;
   console.log(`\n[e2e] Results: ${passed}/${total} passed, ${issues.length} failed`);
 
